@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Juego del Ahorcado Mejorado</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+      padding: 20px;
+    }
+
+    .game-wrapper {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+      max-width: 960px;
+      width: 100%;
+      padding: 24px;
+    }
+
+    .game-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .game-header h1 {
+      font-size: 2rem;
+      margin-bottom: 4px;
+    }
+
+    .game-header p {
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    /* Barra de configuración (modo + dificultad) */
+    .settings-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f4f6fb;
+      font-size: 0.85rem;
+    }
+
+    .settings-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .settings-group label {
+      font-weight: 600;
+    }
+
+    .settings-group .options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .settings-group select {
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 0.85rem;
+    }
+
+    .settings-group input[type="radio"] {
+      cursor: pointer;
+    }
+
+    .top-section {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.3fr);
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+
+    /* Formulario de palabra secreta y nombres */
+    .secret-word-card {
+      border-radius: 16px;
+      padding: 16px;
+      background: #f4f6fb;
+    }
+
+    .secret-word-card h2 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .secret-word-card label {
+      font-size: 0.85rem;
+      color: #444;
+      display: block;
+      margin-top: 6px;
+    }
+
+    .secret-word-card input {
+      width: 100%;
+      margin-top: 4px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+    }
+
+    .secret-word-card input:focus {
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+    }
+
+    .secret-word-card button {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: #1a73e8;
+      color: white;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s;
+      font-size: 0.9rem;
+    }
+
+    .secret-word-card button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(26, 115, 232, 0.35);
+    }
+
+    .secret-word-card button:active {
+      transform: translateY(0);
+      box-shadow: none;
+      background: #1557aa;
+    }
+
+    .hint {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: #777;
+    }
+
+    /* Dibujo del ahorcado */
+    .hangman-card {
+      background: #f4f6fb;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hangman-stage {
+      position: relative;
+      width: 200px;
+      height: 200px;
+    }
+
+    .gallow-base,
+    .gallow-pole,
+    .gallow-top,
+    .gallow-rope {
+      position: absolute;
+      background: #333;
+    }
+
+    .gallow-base {
+      bottom: 20px;
+      left: 20px;
+      width: 160px;
+      height: 10px;
+    }
+
+    .gallow-pole {
+      bottom: 30px;
+      left: 50px;
+      width: 10px;
+      height: 140px;
+    }
+
+    .gallow-top {
+      top: 30px;
+      left: 50px;
+      width: 90px;
+      height: 8px;
+    }
+
+    .gallow-rope {
+      top: 38px;
+      left: 135px;
+      width: 3px;
+      height: 30px;
+      background: #666;
+    }
+
+    /* Partes del cuerpo */
+    .body-part {
+      position: absolute;
+      display: none;
+    }
+
+    .head {
+      top: 60px;
+      left: 120px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 3px solid #222;
+      background: #ffe0bd;
+    }
+
+    .torso {
+      top: 90px;
+      left: 135px;
+      width: 3px;
+      height: 45px;
+      background: #222;
+    }
+
+    .arm-left,
+    .arm-right {
+      top: 100px;
+      width: 35px;
+      height: 3px;
+      background: #222;
+    }
+
+    .arm-left {
+      left: 103px;
+      transform-origin: right center;
+      transform: rotate(-25deg);
+    }
+
+    .arm-right {
+      left: 135px;
+      transform-origin: left center;
+      transform: rotate(25deg);
+    }
+
+    .leg-left,
+    .leg-right {
+      top: 133px;
+      width: 30px;
+      height: 3px;
+      background: #222;
+    }
+
+    .leg-left {
+      left: 107px;
+      transform-origin: right center;
+      transform: rotate(30deg);
+    }
+
+    .leg-right {
+      left: 136px;
+      transform-origin: left center;
+      transform: rotate(-30deg);
+    }
+
+    .attempts {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #444;
+    }
+
+    /* Palabra, teclado, resultados */
+    .word-display {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .word-display .letters {
+      font-size: 1.8rem;
+      letter-spacing: 8px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .word-display .info {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .keyboard {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .key {
+      border-radius: 10px;
+      border: none;
+      padding: 6px 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #e3e7ff;
+      transition: background 0.1s, transform 0.1s, box-shadow 0.1s, color 0.1s;
+    }
+
+    .key:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+      background: #c4cfff;
+    }
+
+    .key.used {
+      background: #ccc;
+      color: #666;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .result {
+      text-align: center;
+      min-height: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .result.win {
+      color: #1a7f37;
+    }
+
+    .result.lose {
+      color: #c62828;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 4px;
+    }
+
+    .controls button {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: #f1f3f4;
+      color: #333;
+      transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
+    }
+
+    .controls button:hover {
+      background: #e0e3e7;
+      transform: translateY(-1px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .controls button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .controls .danger {
+      background: #e53935;
+      color: #fff;
+    }
+
+    .controls .danger:hover {
+      background: #c62828;
+    }
+
+    /* Marcador y historial */
+    .extra-info {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+
+    .scoreboard {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .scoreboard span {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f4f6fb;
+    }
+
+    .history {
+      flex: 1;
+      text-align: right;
+      color: #555;
+    }
+
+    .history span {
+      font-style: italic;
+    }
+
+    /* Responsivo */
+    @media (max-width: 720px) {
+      .top-section {
+        grid-template-columns: 1fr;
+      }
+      .hangman-stage {
+        width: 160px;
+        height: 160px;
+      }
+      .history {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Audios (poné los archivos .mp3 en la misma carpeta) -->
+  <audio id="sound-correct" src="acierto.mp3" preload="auto"></audio>
+  <audio id="sound-wrong" src="error.mp3" preload="auto"></audio>
+  <audio id="sound-win" src="ganar.mp3" preload="auto"></audio>
+  <audio id="sound-lose" src="perder.mp3" preload="auto"></audio>
+
+  <div class="game-wrapper">
+    <div class="game-header">
+      <h1>Juego del Ahorcado</h1>
+      <p>Podés jugar solo (palabra aleatoria) o de a dos (una persona elige la palabra y la otra la adivina).</p>
+    </div>
+
+    <!-- Configuración: modo + dificultad -->
+    <div class="settings-bar">
+      <div class="settings-group">
+        <label>Modo:</label>
+        <div class="options">
+          <label>
+            <input type="radio" name="mode" value="1" checked />
+            1 jugador
+          </label>
+          <label>
+            <input type="radio" name="mode" value="2" />
+            2 jugadores
+          </label>
+        </div>
+      </div>
+      <div class="settings-group">
+        <label for="difficulty">Dificultad:</label>
+        <select id="difficulty">
+          <option value="easy">Fácil (8 errores)</option>
+          <option value="medium" selected>Media (6 errores)</option>
+          <option value="hard">Difícil (4 errores)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="top-section">
+      <!-- Panel de nombres y palabra -->
+      <div class="secret-word-card">
+        <h2>1. Configurar partida</h2>
+
+        <label for="player1">Nombre jugador 1:</label>
+        <input id="player1" type="text" placeholder="Ej: Juan" />
+
+        <div id="player2Container">
+          <label for="player2">Nombre jugador 2 (modo 2 jugadores):</label>
+          <input id="player2" type="text" placeholder="Ej: Ana" />
+        </div>
+
+        <label for="secretInput" id="secretLabel">
+          Palabra secreta (solo en modo 2 jugadores):
+        </label>
+        <input id="secretInput" type="password" placeholder="Ej: COMPUTADORA" />
+
+        <button id="btnStart">Comenzar / Nueva partida</button>
+        <p class="hint">
+          En modo 1 jugador se usará una palabra aleatoria.  
+          En modo 2 jugadores, Jugador 1 escribe la palabra y Jugador 2 la adivina.
+        </p>
+      </div>
+
+      <!-- Dibujo del ahorcado -->
+      <div class="hangman-card">
+        <div class="hangman-stage">
+          <!-- Estructura -->
+          <div class="gallow-base"></div>
+          <div class="gallow-pole"></div>
+          <div class="gallow-top"></div>
+          <div class="gallow-rope"></div>
+          <!-- Partes del cuerpo -->
+          <div class="body-part head" id="part-0"></div>
+          <div class="body-part torso" id="part-1"></div>
+          <div class="body-part arm-left" id="part-2"></div>
+          <div class="body-part arm-right" id="part-3"></div>
+          <div class="body-part leg-left" id="part-4"></div>
+          <div class="body-part leg-right" id="part-5"></div>
+        </div>
+        <div class="attempts">
+          Errores: <span id="errorCount">0</span> / <span id="maxErrors">6</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Palabra y teclado -->
+    <div class="word-display">
+      <div class="letters" id="wordDisplay">_ _ _ _ _</div>
+      <div class="info">
+        Turno de: <span id="currentPlayerLabel">---</span><br />
+        Elegí letras del teclado de abajo.  
+        <span id="usedLettersInfo"></span>
+      </div>
+    </div>
+
+    <div class="keyboard" id="keyboard">
+      <!-- Se llena con JS -->
+    </div>
+
+    <div class="result" id="resultMsg"></div>
+
+    <div class="controls">
+      <button id="btnReset">Reiniciar misma palabra</button>
+      <button id="btnNew" class="danger">Cambiar palabra / nueva partida</button>
+    </div>
+
+    <div class="extra-info">
+      <div class="scoreboard">
+        <span id="scoreP1Wrapper">
+          <strong id="labelP1">Jugador 1</strong>:
+          <span id="scoreP1">0</span> puntos
+        </span>
+        <span id="scoreP2Wrapper">
+          <strong id="labelP2">Jugador 2</strong>:
+          <span id="scoreP2">0</span> puntos
+        </span>
+      </div>
+      <div class="history">
+        Historial de palabras: <span id="historyList">-</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================
+    // VARIABLES DEL JUEGO
+    // ==========================
+    let secretWord = "";
+    let revealedLetters = [];
+    let wrongLetters = [];
+    let maxErrors = 6;
+    let currentErrors = 0;
+    let gameOver = false;
+
+    // Modo y jugadores
+    let mode = "1"; // "1" o "2"
+    let player1Name = "";
+    let player2Name = "";
+    let player1Score = 0;
+    let player2Score = 0;
+
+    // Historial y palabras aleatorias (modo 1 jugador)
+    const randomWords = [
+      "JUEGO", "PROGRAMACION", "COMPUTADORA", "TECLADO", "PANTALLA",
+      "MOUSE", "ALGORITMO", "LENGUAJE", "INTERNET", "NAVEGADOR",
+      "AHORCADO", "DESAFIO", "HTML", "JAVASCRIPT", "VARIABLE",
+      "FUNCION", "OBJETO", "ARREGLO", "ESTUDIANTE", "COLEGIO"
+    ];
+    let usedRandomWords = [];   // para no repetir hasta usar todas
+    let historyWords = [];      // historial que se muestra en pantalla
+
+    // Elementos del DOM
+    const secretInput = document.getElementById("secretInput");
+    const btnStart = document.getElementById("btnStart");
+    const btnReset = document.getElementById("btnReset");
+    const btnNew = document.getElementById("btnNew");
+    const wordDisplay = document.getElementById("wordDisplay");
+    const keyboard = document.getElementById("keyboard");
+    const errorCount = document.getElementById("errorCount");
+    const maxErrorsSpan = document.getElementById("maxErrors");
+    const resultMsg = document.getElementById("resultMsg");
+    const usedLettersInfo = document.getElementById("usedLettersInfo");
+    const difficultySelect = document.getElementById("difficulty");
+    const currentPlayerLabel = document.getElementById("currentPlayerLabel");
+
+    const player1Input = document.getElementById("player1");
+    const player2Input = document.getElementById("player2");
+    const player2Container = document.getElementById("player2Container");
+    const modeRadios = document.querySelectorAll('input[name="mode"]');
+
+    const scoreP1 = document.getElementById("scoreP1");
+    const scoreP2 = document.getElementById("scoreP2");
+    const labelP1 = document.getElementById("labelP1");
+    const labelP2 = document.getElementById("labelP2");
+    const scoreP2Wrapper = document.getElementById("scoreP2Wrapper");
+    const scoreP1Wrapper = document.getElementById("scoreP1Wrapper");
+
+    const historyList = document.getElementById("historyList");
+
+    const soundCorrect = document.getElementById("sound-correct");
+    const soundWrong = document.getElementById("sound-wrong");
+    const soundWin = document.getElementById("sound-win");
+    const soundLose = document.getElementById("sound-lose");
+
+    maxErrorsSpan.textContent = maxErrors.toString();
+
+    // Teclado
+    const letters = [
+      "A","B","C","D","E","F","G","H","I","J",
+      "K","L","M","N","Ñ","O","P","Q","R","S",
+      "T","U","V","W","X","Y","Z"
+    ];
+
+    function playSound(audioElement) {
+      if (!audioElement) return;
+      audioElement.currentTime = 0;
+      audioElement.play().catch(() => {});
+    }
+
+    function buildKeyboard() {
+      keyboard.innerHTML = "";
+      letters.forEach(letter => {
+        const btn = document.createElement("button");
+        btn.textContent = letter;
+        btn.classList.add("key");
+        btn.addEventListener("click", () => handleGuess(letter, btn));
+        keyboard.appendChild(btn);
+      });
+    }
+
+    function setDifficulty() {
+      const value = difficultySelect.value;
+      if (value === "easy") {
+        maxErrors = 8;
+      } else if (value === "hard") {
+        maxErrors = 4;
+      } else {
+        maxErrors = 6;
+      }
+      maxErrorsSpan.textContent = maxErrors.toString();
+    }
+
+    function handleModeChange() {
+      const selected = document.querySelector('input[name="mode"]:checked').value;
+      mode = selected;
+      if (mode === "1") {
+        // Modo 1 jugador: ocultar campo de jugador 2 y palabra
+        player2Container.style.opacity = 0.4;
+        player2Container.style.pointerEvents = "none";
+      } else {
+        player2Container.style.opacity = 1;
+        player2Container.style.pointerEvents = "auto";
+      }
+      updateScoreboardVisibility();
+    }
+
+    function updateScoreboardVisibility() {
+      if (mode === "1") {
+        scoreP2Wrapper.style.display = "none";
+      } else {
+        scoreP2Wrapper.style.display = "inline-flex";
+      }
+    }
+
+    function getRandomWordNoRepeat() {
+      // Si ya usamos todas, reiniciamos la lista de usadas
+      let pool = randomWords.filter(w => !usedRandomWords.includes(w));
+      if (pool.length === 0) {
+        usedRandomWords = [];
+        pool = [...randomWords];
+      }
+      const index = Math.floor(Math.random() * pool.length);
+      const word = pool[index];
+      usedRandomWords.push(word);
+      return word;
+    }
+
+    function startGame() {
+      setDifficulty();
+      mode = document.querySelector('input[name="mode"]:checked').value;
+
+      player1Name = player1Input.value.trim() || "Jugador 1";
+      player2Name = player2Input.value.trim() || (mode === "2" ? "Jugador 2" : "");
+
+      labelP1.textContent = player1Name;
+      labelP2.textContent = player2Name || "Jugador 2";
+
+      updateScoreboardVisibility();
+
+      if (mode === "1") {
+        // palabra aleatoria
+        secretWord = getRandomWordNoRepeat();
+        secretInput.value = "";
+        secretInput.type = "password";
+      } else {
+        const rawWord = secretInput.value.trim().toUpperCase();
+        if (!rawWord || !/^[A-ZÑ]+$/.test(rawWord)) {
+          alert("En modo 2 jugadores, ingresá una palabra válida (solo letras, sin espacios ni acentos).");
+          return;
+        }
+        secretWord = rawWord;
+      }
+
+      // Inicializamos estado de la partida
+      revealedLetters = Array(secretWord.length).fill("_");
+      wrongLetters = [];
+      currentErrors = 0;
+      gameOver = false;
+      resultMsg.textContent = "";
+      resultMsg.className = "result";
+
+      updateWordDisplay();
+      updateErrors();
+      updateUsedLettersInfo();
+      hideAllBodyParts();
+
+      // Reactivar teclas
+      const keys = document.querySelectorAll(".key");
+      keys.forEach(k => k.classList.remove("used"));
+
+      // Mostrar de quién es el turno (el que adivina)
+      if (mode === "1") {
+        currentPlayerLabel.textContent = player1Name;
+      } else {
+        currentPlayerLabel.textContent = player2Name || "Jugador 2";
+      }
+    }
+
+    function resetSameGame() {
+      if (!secretWord) {
+        alert("Primero configurá una partida y comenzá el juego.");
+        return;
+      }
+      revealedLetters = Array(secretWord.length).fill("_");
+      wrongLetters = [];
+      currentErrors = 0;
+      gameOver = false;
+      resultMsg.textContent = "";
+      resultMsg.className = "result";
+
+      updateWordDisplay();
+      updateErrors();
+      updateUsedLettersInfo();
+      hideAllBodyParts();
+
+      const keys = document.querySelectorAll(".key");
+      keys.forEach(k => k.classList.remove("used"));
+    }
+
+    function handleGuess(letter, buttonElement) {
+      if (gameOver || !secretWord) return;
+      if (buttonElement && buttonElement.classList.contains("used")) return;
+
+      if (buttonElement) buttonElement.classList.add("used");
+
+      if (secretWord.includes(letter)) {
+        // Acierto
+        for (let i = 0; i < secretWord.length; i++) {
+          if (secretWord[i] === letter) {
+            revealedLetters[i] = letter;
+          }
+        }
+        playSound(soundCorrect);
+        updateWordDisplay();
+        checkWin();
+      } else {
+        // Error
+        if (!wrongLetters.includes(letter)) {
+          wrongLetters.push(letter);
+          currentErrors++;
+          playSound(soundWrong);
+          updateErrors();
+          updateHangmanDrawing();
+          updateUsedLettersInfo();
+          checkLose();
+        }
+      }
+    }
+
+    function updateWordDisplay() {
+      wordDisplay.textContent = revealedLetters.join(" ");
+    }
+
+    function updateErrors() {
+      errorCount.textContent = currentErrors.toString();
+    }
+
+    function updateUsedLettersInfo() {
+      if (wrongLetters.length === 0) {
+        usedLettersInfo.textContent = "";
+      } else {
+        usedLettersInfo.textContent =
+          " | Letras incorrectas: " + wrongLetters.join(", ");
+      }
+    }
+
+    function addWordToHistory(word) {
+      // Evitamos duplicados en el historial mostrado
+      if (!historyWords.includes(word)) {
+        historyWords.push(word);
+      }
+      if (historyWords.length === 0) {
+        historyList.textContent = "-";
+      } else {
+        historyList.textContent = historyWords.join(", ");
+      }
+    }
+
+    function checkWin() {
+      if (!revealedLetters.includes("_")) {
+        gameOver = true;
+        const whoGuessed = (mode === "1") ? player1Name : (player2Name || "Jugador 2");
+        resultMsg.textContent = "¡Felicitaciones, " + whoGuessed + "! Adivinaste la palabra 🎉";
+        resultMsg.className = "result win";
+        playSound(soundWin);
+
+        // Sumamos punto al que adivina
+        if (mode === "1") {
+          player1Score++;
+        } else {
+          player2Score++;
+        }
+        updateScoreboard();
+        addWordToHistory(secretWord);
+      }
+    }
+
+    function checkLose() {
+      if (currentErrors >= maxErrors) {
+        gameOver = true;
+        const whoGuessed = (mode === "1") ? player1Name : (player2Name || "Jugador 2");
+        resultMsg.textContent =
+          "Lo siento, " + whoGuessed + " 😢. La palabra era: " + secretWord;
+        resultMsg.className = "result lose";
+        playSound(soundLose);
+        addWordToHistory(secretWord);
+      }
+    }
+
+    function updateScoreboard() {
+      scoreP1.textContent = player1Score.toString();
+      scoreP2.textContent = player2Score.toString();
+    }
+
+    function hideAllBodyParts() {
+      const maxParts = 6; // coincide con cantidad de partes creadas
+      for (let i = 0; i < maxParts; i++) {
+        const part = document.getElementById("part-" + i);
+        if (part) {
+          part.style.display = "none";
+        }
+      }
+    }
+
+    function updateHangmanDrawing() {
+      const maxParts = 6;
+      // Mostramos una parte del cuerpo proporcional a los errores,
+      // pero nunca más de las partes que tenemos dibujadas.
+      for (let i = 0; i < currentErrors && i < maxParts; i++) {
+        const part = document.getElementById("part-" + i);
+        if (part) {
+          part.style.display = "block";
+        }
+      }
+    }
+
+    // Eventos
+    btnStart.addEventListener("click", startGame);
+    btnReset.addEventListener("click", resetSameGame);
+    btnNew.addEventListener("click", startGame);
+
+    modeRadios.forEach(radio => {
+      radio.addEventListener("change", handleModeChange);
+    });
+
+    // Inicial
+    buildKeyboard();
+    handleModeChange(); // para ajustar visibilidad de campos
+    wordDisplay.textContent = "_ _ _ _ _";
+    currentPlayerLabel.textContent = "---";
+    historyList.textContent = "-";
+    updateScoreboard();
+  </script>
+</body>
+</html>
